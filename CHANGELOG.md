@@ -1,6 +1,17 @@
 <!-- Keep a Changelog guide -> https://keepachangelog.com -->
 
 # Norminette Changelog
+## [0.1.9] - 2025-04-29
+
+## Added
+- Build toolchain upgraded to Java 23 (while emitting Java 17 bytecode for IDE compatibility)
+- Kotlin plugin bumped to 1.9.20 (or latest), and Gradle wrapper updated accordingly
+- Gradle configuration modernized (Java and Kotlin toolchains, --release 17, jvmTarget=17)
+- IntelliJ Platform baseline moved to 2020.3 (switched from com.intellij.modules.cidr.lang → com.intellij.cidr.base)
+- Plugin.xml dependencies cleaned up: only platform, lang, cidr.base (+ optional clion)
+- Inspection core refactored: replaced OCVisitor with PsiElementVisitor and extracted a standalone NorminetteSettingsService
+- Settings panel rewritten to avoid class‐initializer/service lookup issues (lazy Swing init, headless‐safe)
+- Build & packaging streamlined with the Gradle IntelliJ Plugin’s buildPlugin task
 
 ## [Unreleased]
 ### Added
