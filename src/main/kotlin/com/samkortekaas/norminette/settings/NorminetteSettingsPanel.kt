@@ -1,115 +1,90 @@
+// src/main/kotlin/com/samkortekaas/norminette/settings/NorminetteSettingsPanel.kt
 package com.samkortekaas.norminette.settings
 
-import com.intellij.ide.util.PropertiesComponent
-import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.Configurable
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
-import java.awt.Button
-import java.awt.FlowLayout
-import java.awt.event.ActionEvent
-import java.awt.event.ActionListener
-import java.io.File
-import javax.swing.JComponent
-import javax.swing.JLabel
-import javax.swing.JPanel
-import javax.swing.JTextField
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
+import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
+import java.awt.FlowLayout
 
+/**
+ * The “Preferences → Norminette” panel.
+ * All UI and service lookups happen inside createComponent/reset/apply.
+ */
 object NorminetteSettingsPanel : Configurable {
     private var modified = false
-    private var textField = TextFieldWithBrowseButton(JTextField(30))
-    private var button = Button("Detect installation")
-    private val listener = NorminetteModifiedListener(this)
-    private val buttonListener = NorminetteButtonListener()
-    private val persistentProperties = PropertiesComponent.getInstance()
-    private const val pathKey = "skrtks.norminette.settings.path"
-    var NORMINETTE_PATH_VAL = persistentProperties.getValue(pathKey) ?: ""
+
+    private var panel: JPanel? = null
+    private var textField: TextFieldWithBrowseButton? = null
+    private var button: JButton? = null
+
+    override fun getDisplayName(): String = "Norminette"
 
     override fun createComponent(): JComponent {
-        val panel = JPanel()
-        panel.layout = FlowLayout(FlowLayout.LEFT, 5, 5)
+        val service = NorminetteSettingsService.getInstance()
+        val initial = service.path
 
-        val desc = FileChooserDescriptorFactory.createSingleFileDescriptor()
-        textField.textField.document.addDocumentListener(listener)
-        textField.addBrowseFolderListener(
-            "Norminette Executable",
-            "Please select the Norminette executable",
-            null,
-            desc
-        )
-        textField.text = NORMINETTE_PATH_VAL
+        panel = JPanel(FlowLayout(FlowLayout.LEFT, 5, 5))
 
-        panel.add(JLabel("Norminette: "))
-        panel.add(textField)
+        textField = TextFieldWithBrowseButton(JTextField(30)).apply {
+            // safe to call FileChooserFactory here
+            addBrowseFolderListener(
+                "Norminette Executable",
+                "Select the Norminette CLI executable",
+                null,
+                FileChooserDescriptorFactory.createSingleFileDescriptor()
+            )
+            text = initial
+            // listen for edits
+            this.textField.document.addDocumentListener(object : DocumentListener {
+                override fun insertUpdate(e: DocumentEvent) { modified = true }
+                override fun removeUpdate(e: DocumentEvent) { modified = true }
+                override fun changedUpdate(e: DocumentEvent) { modified = true }
+            })
+        }
 
-        button.addActionListener(buttonListener)
-        panel.add(button)
+        button = JButton("Detect installation").apply {
+            addActionListener {
+                val found = service.detect()
+                textField!!.text = if (found.isEmpty()) "No installation found" else found
+                modified = true
+            }
+        }
 
-        return panel
+        panel!!.add(JLabel("Norminette:"))
+        panel!!.add(textField)
+        panel!!.add(button)
+
+        return panel!!
     }
 
-    override fun isModified(): Boolean {
-        return modified
-    }
+    override fun isModified(): Boolean = modified
 
     override fun apply() {
-        NORMINETTE_PATH_VAL = textField.text
-        persistentProperties.setValue(pathKey, NORMINETTE_PATH_VAL)
+        val service = NorminetteSettingsService.getInstance()
+        service.path = textField!!.text
         modified = false
     }
 
     override fun reset() {
-        if (NORMINETTE_PATH_VAL.isEmpty()) {
-            detectAndSetPath()
+        val service = NorminetteSettingsService.getInstance()
+        val current = service.path
+        if (current.isEmpty()) {
+            // auto-detect on blank
+            val found = service.detect()
+            textField!!.text = if (found.isEmpty()) "" else found
+        } else {
+            textField!!.text = current
         }
         modified = false
     }
 
-    fun detectAndSetPath() {
-        NORMINETTE_PATH_VAL = findExecutableOnPath() ?: ""
-        persistentProperties.setValue(pathKey, NORMINETTE_PATH_VAL)
-        textField.text = NORMINETTE_PATH_VAL.ifEmpty { "No installation found" }
-    }
-
-    private fun findExecutableOnPath(): String? {
-        val path = System.getenv("PATH") + ":/usr/local/bin" // /usr/local/bin not in PATH for applications by default on macOS
-        for (dirname in path.split(File.pathSeparator)) {
-            val file = File(dirname, "norminette")
-            if (file.exists() && file.canExecute()) {
-                return file.absolutePath
-            }
-        }
-        return null
-    }
-
     override fun disposeUIResources() {
-        textField.textField.document.removeDocumentListener(listener)
-        button.removeActionListener(buttonListener)
-    }
-
-    @Suppress("DialogTitleCapitalization")
-    override fun getDisplayName(): String {
-        return "norminette"
-    }
-
-    private class NorminetteModifiedListener(private val settingsPanel: NorminetteSettingsPanel) : DocumentListener {
-        override fun insertUpdate(documentEvent: DocumentEvent) {
-            modified = true
-        }
-
-        override fun removeUpdate(documentEvent: DocumentEvent) {
-            modified = true
-        }
-
-        override fun changedUpdate(documentEvent: DocumentEvent) {
-            modified = true
-        }
-    }
-
-    private class NorminetteButtonListener : ActionListener {
-        override fun actionPerformed(e: ActionEvent?) {
-            detectAndSetPath()
-        }
+        // allow GC
+        panel = null
+        textField = null
+        button = null
     }
 }

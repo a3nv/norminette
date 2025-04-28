@@ -1,8 +1,22 @@
-# Norminette for CLion
+# Norminette for CLion Plugin (Forked & fixed)
 
-![Build](https://github.com/skrtks/norminette/workflows/Build/badge.svg)
-[![Version](https://img.shields.io/jetbrains/plugin/v/17190-norminette.svg)](https://plugins.jetbrains.com/plugin/17190-norminette)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/17190-norminette.svg)](https://plugins.jetbrains.com/plugin/17190-norminette)
+**This is my personal fork of the original [skrtks](https://github.com/skrtks/norminette) Plugin**, created because the upstream version wasn’t working quite right 
+for my use case. I’ve applied a number of fixes, feature enhancements and upgrade both java and kotlin version to make it more stable and flexible. 
+Feel free to try it out, raise issues, or submit PRs!
+
+## How to build locally
+
+- clonse repo
+- run `./gradlew clean buildPlugin`
+- check /path/to/your/repo/folder/build/distributions/Norminette-[version].zip
+- open intellij and upload zip file as a local plugin
+
+
+[//]: # (![Build]&#40;https://github.com/skrtks/norminette/workflows/Build/badge.svg&#41;)
+
+[//]: # ([![Version]&#40;https://img.shields.io/jetbrains/plugin/v/17190-norminette.svg&#41;]&#40;https://plugins.jetbrains.com/plugin/17190-norminette&#41;)
+
+[//]: # ([![Downloads]&#40;https://img.shields.io/jetbrains/plugin/d/17190-norminette.svg&#41;]&#40;https://plugins.jetbrains.com/plugin/17190-norminette&#41;)
 
 <!-- Plugin description -->
 

@@ -1,5 +1,7 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.changelog.Changelog
 import org.jetbrains.changelog.markdownToHTML
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 fun properties(key: String) = providers.gradleProperty(key)
 fun environment(key: String) = providers.environmentVariable(key)
@@ -27,8 +29,21 @@ dependencies {
 }
 
 // Set the JVM language level used to build the project. Use Java 11 for 2020.3+, and Java 17 for 2022.2+.
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(23))
+    }
+}
+
 kotlin {
-    jvmToolchain(11)
+    jvmToolchain(23)
+}
+
+tasks.withType<KotlinCompile>().configureEach {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+        javaParameters.set(true)
+    }
 }
 
 // Configure Gradle IntelliJ Plugin - read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
@@ -61,6 +76,10 @@ kover.xmlReport {
 }
 
 tasks {
+    withType<JavaCompile>().configureEach {
+        options.release.set(17)
+    }
+
     wrapper {
         gradleVersion = properties("gradleVersion").get()
     }
@@ -114,10 +133,16 @@ tasks {
 
     publishPlugin {
         dependsOn("patchChangelog")
-        token = environment("PUBLISH_TOKEN")
-        // The pluginVersion is based on the SemVer (https://semver.org) and supports pre-release labels, like 2.1.7-alpha.3
-        // Specify pre-release label to publish the plugin in a custom Release Channel automatically. Read more:
-        // https://plugins.jetbrains.com/docs/intellij/deployment.html#specifying-a-release-channel
-        channels = properties("pluginVersion").map { listOf(it.split('-').getOrElse(1) { "default" }.split('.').first()) }
+        token.set(environment("PUBLISH_TOKEN"))
+
+        channels.set(
+            properties("pluginVersion").map { version ->
+                val suffix = version
+                    .split('-', limit = 2)
+                    .getOrElse(1) { "default" }
+                    .substringBefore('.')
+                mutableListOf(suffix)
+            }
+        )
     }
 }

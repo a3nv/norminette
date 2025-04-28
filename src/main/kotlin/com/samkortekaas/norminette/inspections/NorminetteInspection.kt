@@ -5,7 +5,6 @@ import com.intellij.codeInspection.LocalInspectionTool
 import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiFile
-import com.jetbrains.cidr.lang.psi.visitors.OCVisitor
 import com.samkortekaas.norminette.annotator.NorminetteAnnotator
 
 
@@ -22,7 +21,7 @@ class NorminetteInspection : LocalInspectionTool() {
     override fun runForWholeFile(): Boolean = true
 
     override fun buildVisitor(holder: ProblemsHolder, isOnTheFly: Boolean): PsiElementVisitor {
-        return object : OCVisitor() {
+        return object : PsiElementVisitor() {
             override fun visitFile(file: PsiFile) {
                 val problemDescriptors = ExternalAnnotatorInspectionVisitor.checkFileWithExternalAnnotator(
                     file,
